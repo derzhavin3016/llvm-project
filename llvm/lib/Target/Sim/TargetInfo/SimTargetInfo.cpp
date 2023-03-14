@@ -15,7 +15,7 @@ using namespace llvm;
 Target llvm::TheSimTarget;
 
 extern "C" void LLVMInitializeSimTargetInfo() {
-  RegisterTarget<Triple::sim,
+  RegisterTarget<Triple::sim_riscv,
                  /*HasJIT=*/false>
-      X(TheSimTarget, "Sim", "Sim (32-bit simulator arch)", "Sim");
+      X(TheSimTarget, "Sim", "Sim: 32-bit riscv simulator arch", "Sim");
 }
