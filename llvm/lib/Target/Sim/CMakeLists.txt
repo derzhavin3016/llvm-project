@@ -8,7 +8,7 @@ tablegen(LLVM SimGenInstrInfo.inc -gen-instr-info)
 add_public_tablegen_target(SimCommonTableGen)
 
 add_llvm_target(SimCodeGen
-  RISCVTargetMachine.cpp
+  SimTargetMachine.cpp
 
   LINK_COMPONENTS
   Analysis
