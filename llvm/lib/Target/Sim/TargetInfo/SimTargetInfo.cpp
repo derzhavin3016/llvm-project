@@ -7,15 +7,20 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "TargetInfo/SimTargetInfo.h"
 #include "Sim.h"
 #include "llvm/IR/Module.h"
 #include "llvm/MC/TargetRegistry.h"
+
 using namespace llvm;
 
-Target llvm::TheSimTarget;
+Target &llvm::getTheSimTarget() {
+  static Target TheSimTarget;
+  return TheSimTarget;
+}
 
-extern "C" void LLVMInitializeSimTargetInfo() {
+extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeSimTargetInfo() {
   RegisterTarget<Triple::sim_riscv,
                  /*HasJIT=*/false>
-      X(TheSimTarget, "Sim", "Sim: 32-bit riscv simulator arch", "Sim");
+      X(getTheSimTarget(), "Sim", "Sim: 32-bit riscv simulator arch", "Sim");
 }
