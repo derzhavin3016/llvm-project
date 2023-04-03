@@ -85,7 +85,7 @@ def Simm16 : Operand<i32>, ImmLeaf<i32, [{return isInt<16>(Imm);}]> {
       return isInt<16>(Imm);
     return MCOp.isBareSymbolRef();
   }];
-  let OperandType = "OPERAND_MAGM16";
+  let OperandType = "OPERAND_SIMM16";
   let OperandNamespace = "SimOp";
 }
 

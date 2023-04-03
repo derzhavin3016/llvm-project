@@ -12,6 +12,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "SimMCTargetDesc.h"
+#include "SimInfo.h"
+#include "SimInstPrinter.h"
+#include "SimMCAsmInfo.h"
+#include "SimTargetStreamer.h"
+#include "TargetInfo/SimTargetInfo.h"
 #include "llvm/MC/MCELFStreamer.h"
 #include "llvm/MC/MCInstPrinter.h"
 #include "llvm/MC/MCInstrAnalysis.h"

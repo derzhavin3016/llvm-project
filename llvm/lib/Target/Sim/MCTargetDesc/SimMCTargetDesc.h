@@ -24,7 +24,7 @@ class Triple;
 
 extern Target TheSimTarget;
 
-} // End llvm namespace
+} // namespace llvm
 
 // Defines symbolic names for Sim registers.  This defines a mapping from
 // register name to register number.

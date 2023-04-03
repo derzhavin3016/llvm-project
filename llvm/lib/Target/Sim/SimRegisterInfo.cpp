@@ -60,7 +60,7 @@ bool SimRegisterInfo::useFPForScavengingIndex(
 #endif
 
 // TODO: rewrite!
-void SimRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
+bool SimRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
                                           int SPAdj, unsigned FIOperandNum,
                                           RegScavenger *RS) const {
   assert(SPAdj == 0 && "Unexpected non-zero SPAdj value");
@@ -82,6 +82,8 @@ void SimRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
 
   MI.getOperand(FIOperandNum).ChangeToRegister(FrameReg, false, false, false);
   MI.getOperand(FIOperandNum + 1).ChangeToImmediate(Offset);
+
+  return true;
 }
 
 Register SimRegisterInfo::getFrameRegister(const MachineFunction &MF) const {

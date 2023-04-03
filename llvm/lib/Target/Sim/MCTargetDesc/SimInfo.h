@@ -5,7 +5,7 @@
 
 namespace llvm {
 
-namespace simCC {
+namespace SimCC {
 enum CondCode {
   EQ,
   NE,
@@ -20,13 +20,13 @@ CondCode getOppositeBranchCondition(CondCode);
 enum BRCondCode {
   BREQ = 0x0,
 };
-} // namespace simCC
-namespace simOp {
+} // namespace SimCC
+namespace SimOp {
 enum OperandType : unsigned {
   OPERAND_SIMM16 = MCOI::OPERAND_FIRST_TARGET,
   OPERAND_UIMM16,
 };
-} // namespace simOp
+} // namespace SimOp
 } // namespace llvm
 
 #endif // __LLVM_LIB_TARGET_SIM_MCTARGETDESC_SIMINFO_H__

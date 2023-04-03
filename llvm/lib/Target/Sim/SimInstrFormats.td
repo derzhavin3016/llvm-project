@@ -7,13 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-// Generic sim Format
-class simInst<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>: Instruction
+// Generic Sim Format
+class SimInst<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>: Instruction
 {
   // Inst and Size: for tablegen(... -gen-emitter) and
   // tablegen(... -gen-disassembler) in CMakeLists.txt
-  let Namespace = "sim";
-  let DecoderNamespace = "sim";
+  let Namespace = "Sim";
+  let DecoderNamespace = "Sim";
   let Size = 4;
 
   field bits<32> Inst;
@@ -36,8 +36,8 @@ class simInst<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>: 
 }
 
 // Pseudo instructions format
-class simPseudoInst<dag outs, dag ins, string asmstr, list<dag> pattern>
-   : simInst<0, outs, ins, asmstr, pattern> {
+class SimPseudoInst<dag outs, dag ins, string asmstr, list<dag> pattern>
+   : SimInst<0, outs, ins, asmstr, pattern> {
   let isPseudo = 1;
   let isCodeGenOnly = 1;
 }

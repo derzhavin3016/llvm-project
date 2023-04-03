@@ -27,10 +27,11 @@ namespace {
 
 class SimDAGToDAGISel : public SelectionDAGISel {
   const SimSubtarget *Subtarget = nullptr;
+  static inline char ID = 0;
 
 public:
   SimDAGToDAGISel(SimTargetMachine &TM, CodeGenOpt::Level OptLevel)
-      : SelectionDAGISel(TM, OptLevel) {}
+      : SelectionDAGISel(ID, TM, OptLevel) {}
 
   bool runOnMachineFunction(MachineFunction &MF) override {
     Subtarget = &MF.getSubtarget<SimSubtarget>();

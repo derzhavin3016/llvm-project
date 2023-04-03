@@ -4,6 +4,7 @@
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/CodeGen/MachineModuleInfo.h"
+#include "llvm/CodeGen/Register.h"
 #include "llvm/CodeGen/RegisterScavenging.h"
 #include "llvm/CodeGen/TargetRegisterInfo.h"
 #include "llvm/IR/Function.h"
@@ -17,8 +18,8 @@ using namespace llvm;
 
 // seems done
 void SimFrameLowering::determineCalleeSaves(MachineFunction &MF,
-                                             BitVector &SavedRegs,
-                                             RegScavenger *RS) const {
+                                            BitVector &SavedRegs,
+                                            RegScavenger *RS) const {
   TargetFrameLowering::determineCalleeSaves(MF, SavedRegs, RS);
   // Unconditionally spill RA and FP only if the function uses a frame
   // pointer.
@@ -33,10 +34,10 @@ void SimFrameLowering::determineCalleeSaves(MachineFunction &MF,
 
 // TODO: Build insns
 void SimFrameLowering::adjustReg(MachineBasicBlock &MBB,
-                                  MachineBasicBlock::iterator MBBI,
-                                  const DebugLoc &DL, Register DestReg,
-                                  Register SrcReg, int64_t Val,
-                                  MachineInstr::MIFlag Flag) const {
+                                 MachineBasicBlock::iterator MBBI,
+                                 const DebugLoc &DL, Register DestReg,
+                                 Register SrcReg, int64_t Val,
+                                 MachineInstr::MIFlag Flag) const {
   // MachineRegisterInfo &MRI = MBB.getParent()->getRegInfo();
   const SimInstrInfo *TII = STI.getInstrInfo();
 
@@ -62,7 +63,7 @@ void SimFrameLowering::adjustStackToMatchRecords(
 
 // TODO: seems ok
 void SimFrameLowering::emitPrologue(MachineFunction &MF,
-                                     MachineBasicBlock &MBB) const {
+                                    MachineBasicBlock &MBB) const {
   MachineFrameInfo &MFI = MF.getFrameInfo();
   auto *FI = MF.getInfo<SimFunctionInfo>();
   const SimRegisterInfo *RI = STI.getRegisterInfo();
@@ -115,7 +116,7 @@ void SimFrameLowering::emitPrologue(MachineFunction &MF,
 
 // TODO: seems ok
 void SimFrameLowering::emitEpilogue(MachineFunction &MF,
-                                     MachineBasicBlock &MBB) const {
+                                    MachineBasicBlock &MBB) const {
   const SimRegisterInfo *RI = STI.getRegisterInfo();
   MachineFrameInfo &MFI = MF.getFrameInfo();
   auto *UFI = MF.getInfo<SimFunctionInfo>();
@@ -184,7 +185,7 @@ bool SimFrameLowering::spillCalleeSavedRegisters(
     Register Reg = CS.getReg();
     const TargetRegisterClass *RC = TRI->getMinimalPhysRegClass(Reg);
     TII.storeRegToStackSlot(MBB, MI, Reg, !MBB.isLiveIn(Reg), CS.getFrameIdx(),
-                            RC, TRI);
+                            RC, TRI, Register());
   }
 
   return true;
@@ -205,7 +206,8 @@ bool SimFrameLowering::restoreCalleeSavedRegisters(
   for (auto &CS : reverse(CSI)) {
     Register Reg = CS.getReg();
     const TargetRegisterClass *RC = TRI->getMinimalPhysRegClass(Reg);
-    TII.loadRegFromStackSlot(MBB, MI, Reg, CS.getFrameIdx(), RC, TRI);
+    TII.loadRegFromStackSlot(MBB, MI, Reg, CS.getFrameIdx(), RC, TRI,
+                             Register());
     assert(MI != MBB.begin() && "loadRegFromStackSlot didn't insert any code!");
   }
 
@@ -272,9 +274,10 @@ bool SimFrameLowering::hasFP(const MachineFunction &MF) const {
   const TargetRegisterInfo *RegInfo = MF.getSubtarget().getRegisterInfo();
 
   const MachineFrameInfo &MFI = MF.getFrameInfo();
-  return MF.getTarget().Options.DisableFramePointerElim(MF) || // -fomit-frame-pointer
-         RegInfo->hasStackRealignment(MF) || MFI.hasVarSizedObjects() ||
-         MFI.isFrameAddressTaken();
+  return MF.getTarget().Options.DisableFramePointerElim(
+             MF) || // -fomit-frame-pointer
+         RegInfo->hasStackRealignment(MF) ||
+         MFI.hasVarSizedObjects() || MFI.isFrameAddressTaken();
 }
 
 bool SimFrameLowering::hasBP(const MachineFunction &MF) const {
@@ -285,9 +288,9 @@ bool SimFrameLowering::hasBP(const MachineFunction &MF) const {
 }
 
 // TODO: rewrite!
-StackOffset
-SimFrameLowering::getFrameIndexReference(const MachineFunction &MF, int FI,
-                                          Register &FrameReg) const {
+StackOffset SimFrameLowering::getFrameIndexReference(const MachineFunction &MF,
+                                                     int FI,
+                                                     Register &FrameReg) const {
   const MachineFrameInfo &MFI = MF.getFrameInfo();
   const TargetRegisterInfo *RI = MF.getSubtarget().getRegisterInfo();
   const auto *UFI = MF.getInfo<SimFunctionInfo>();
