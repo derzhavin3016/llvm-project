@@ -1,13 +1,14 @@
 #ifndef __CLANG_LIB_BASIC_TARGETS_SIM_H__
 #define __CLANG_LIB_BASIC_TARGETS_SIM_H__
 
+#include <array>
+
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Basic/TargetOptions.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/Support/Compiler.h"
 
-namespace clang {
-namespace targets {
+namespace clang::targets {
 
 class LLVM_LIBRARY_VISIBILITY SimTargetInfo : public TargetInfo {
 public:
@@ -37,10 +38,10 @@ public:
   const char *getClobbers() const override { return ""; }
 
   ArrayRef<const char *> getGCCRegNames() const override {
-    static const char *const GCCRegNames[] = {
+    static constexpr const std::array GCCRegNames = {
         "r0", "r1",  "r2",  "r3",  "r4",  "r5",  "r6",  "r7", "r8",
         "r9", "r10", "r11", "r12", "r13", "r14", "r15", "r16"};
-    return llvm::makeArrayRef(GCCRegNames);
+    return GCCRegNames;
   }
 
   ArrayRef<TargetInfo::GCCRegAlias> getGCCRegAliases() const override {
@@ -57,7 +58,6 @@ public:
   bool isCLZForZeroUndef() const override { return false; }
 };
 
-} // namespace targets
-} // namespace clang
+} // namespace clang::targets
 
 #endif // __CLANG_LIB_BASIC_TARGETS_SIM_H__
