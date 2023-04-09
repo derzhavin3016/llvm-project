@@ -16,6 +16,8 @@ include "llvm/Target/Target.td"
 //    : SubtargetFeature<"dummy", "Dummy", "true",
 //                       "Dummy feature">;
 
+defvar sim32 = DefaultMode;
+
 //===----------------------------------------------------------------------===//
 // Target-dependent interfaces
 //===----------------------------------------------------------------------===//
@@ -35,11 +37,13 @@ def simInstrInfo : InstrInfo;
 // sim processors supported.
 //===----------------------------------------------------------------------===//
 
-class Proc<string Name, list<SubtargetFeature> Features>
- : Processor<Name, NoItineraries, Features>;
+def : ProcessorModel<"generic-32", NoSchedModel, []>;
 
-def : Proc<"generic", []>;
-//def : Proc<"dummy-st", []>;
+def simAsmParser : AsmParser {
+  let ShouldEmitMatchRegisterAltName = 1;
+  let AllowDuplicateRegisterNames = 1;
+}
+
 
 // Will generate simGenAsmWrite.inc included by simInstPrinter.cpp, contents
 //  as follows,
