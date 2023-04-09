@@ -22,21 +22,24 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MachineValueType.h"
 #include <algorithm>
+#include <array>
 
 #define DEBUG_TYPE "sim-lower"
 
 using namespace llvm;
 
-static const MCPhysReg ArgGPRs[] = {sim::R9, sim::R10, sim::R11, sim::R12};
+static const std::array<MCPhysReg, 8> ArgGPRs = {sim::X10, sim::X11, sim::X12,
+                                                 sim::X13, sim::X14, sim::X15,
+                                                 sim::X16, sim::X17};
 
 void simTargetLowering::ReplaceNodeResults(SDNode *N,
-                                            SmallVectorImpl<SDValue> &Results,
-                                            SelectionDAG &DAG) const {
+                                           SmallVectorImpl<SDValue> &Results,
+                                           SelectionDAG &DAG) const {
   llvm_unreachable("");
 }
 
 simTargetLowering::simTargetLowering(const TargetMachine &TM,
-                                       const simSubtarget &STI)
+                                     const simSubtarget &STI)
     : TargetLowering(TM), STI(STI) {
   addRegisterClass(MVT::i32, &sim::GPRRegClass);
 
@@ -97,7 +100,7 @@ static Align getPrefTypeAlign(EVT VT, SelectionDAG &DAG) {
 
 // TODO: rewrite
 SDValue simTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
-                                      SmallVectorImpl<SDValue> &InVals) const {
+                                     SmallVectorImpl<SDValue> &InVals) const {
   SelectionDAG &DAG = CLI.DAG;
   SDLoc &DL = CLI.DL;
   SmallVectorImpl<ISD::OutputArg> &Outs = CLI.Outs;
@@ -533,10 +536,10 @@ bool simTargetLowering::CanLowerReturn(
 // TODO: rewrite
 SDValue
 simTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
-                                bool IsVarArg,
-                                const SmallVectorImpl<ISD::OutputArg> &Outs,
-                                const SmallVectorImpl<SDValue> &OutVals,
-                                const SDLoc &DL, SelectionDAG &DAG) const {
+                               bool IsVarArg,
+                               const SmallVectorImpl<ISD::OutputArg> &Outs,
+                               const SmallVectorImpl<SDValue> &OutVals,
+                               const SDLoc &DL, SelectionDAG &DAG) const {
   const MachineFunction &MF = DAG.getMachineFunction();
   const simSubtarget &STI = MF.getSubtarget<simSubtarget>();
 
@@ -579,7 +582,7 @@ simTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
 //===----------------------------------------------------------------------===//
 
 SDValue simTargetLowering::PerformDAGCombine(SDNode *N,
-                                              DAGCombinerInfo &DCI) const {
+                                             DAGCombinerInfo &DCI) const {
   // TODO: advanced opts
   return {};
 }
@@ -592,9 +595,9 @@ SDValue simTargetLowering::PerformDAGCombine(SDNode *N,
 /// target, for a load/store of the specified type.
 // TODO: verify
 bool simTargetLowering::isLegalAddressingMode(const DataLayout &DL,
-                                               const AddrMode &AM, Type *Ty,
-                                               unsigned AS,
-                                               Instruction *I) const {
+                                              const AddrMode &AM, Type *Ty,
+                                              unsigned AS,
+                                              Instruction *I) const {
   // No global is ever allowed as a base.
   if (AM.BaseGV)
     return false;
@@ -651,8 +654,7 @@ SDValue simTargetLowering::lowerBR_CC(SDValue Op, SelectionDAG &DAG) const {
                      LHS, RHS, TargetCC, Block);
 }
 
-SDValue simTargetLowering::lowerFRAMEADDR(SDValue Op,
-                                           SelectionDAG &DAG) const {
+SDValue simTargetLowering::lowerFRAMEADDR(SDValue Op, SelectionDAG &DAG) const {
   const simRegisterInfo &RI = *STI.getRegisterInfo();
   MachineFunction &MF = DAG.getMachineFunction();
   MachineFrameInfo &MFI = MF.getFrameInfo();
@@ -666,8 +668,7 @@ SDValue simTargetLowering::lowerFRAMEADDR(SDValue Op,
   return FrameAddr;
 }
 
-SDValue simTargetLowering::LowerOperation(SDValue Op,
-                                           SelectionDAG &DAG) const {
+SDValue simTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   switch (Op->getOpcode()) {
   case ISD::BR_CC:
     return lowerBR_CC(Op, DAG);

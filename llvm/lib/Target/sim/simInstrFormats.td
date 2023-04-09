@@ -16,12 +16,13 @@ class InstFormat<bits<5> val> {
   bits<5> Value = val;
 }
 
-def InstFormatR      : InstFormat<0>;
-def InstFormatI      : InstFormat<1>;
-def InstFormatS      : InstFormat<2>;
-def InstFormatB      : InstFormat<3>;
-def InstFormatU      : InstFormat<4>;
-def InstFormatJ      : InstFormat<5>;
+def InstFormatPseudo      : InstFormat<0>;
+def InstFormatR           : InstFormat<1>;
+def InstFormatI           : InstFormat<2>;
+def InstFormatS           : InstFormat<3>;
+def InstFormatB           : InstFormat<4>;
+def InstFormatU           : InstFormat<5>;
+def InstFormatJ           : InstFormat<6>;
 
 // The following opcode names match those given in Table 19.1 in the
 // RISC-V User-level ISA specification ("RISC-V base opcode map").
@@ -70,6 +71,13 @@ class simInst<dag outs, dag ins, string opcodestr, string argstr,
   dag InOperandList = ins;
   let AsmString = opcodestr # "\t" # argstr;
   let Pattern = pattern;
+}
+
+// Pseudo instructions
+class Pseudo<dag outs, dag ins, list<dag> pattern, string opcodestr = "", string argstr = "">
+    : simInst<outs, ins, opcodestr, argstr, pattern, InstFormatPseudo> {
+  let isPseudo = 1;
+  let isCodeGenOnly = 1;
 }
 
 class simInstR<bits<7> funct7, bits<3> funct3, simOpcode opcode, dag outs,
