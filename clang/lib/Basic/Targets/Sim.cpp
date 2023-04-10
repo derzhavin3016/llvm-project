@@ -3,10 +3,11 @@
 #include "clang/Basic/MacroBuilder.h"
 #include "clang/Basic/TargetBuiltins.h"
 
-using namespace clang;
-using namespace clang::targets;
-
+namespace clang {
+namespace targets {
 void SimTargetInfo::getTargetDefines(const LangOptions &Opts,
                                      MacroBuilder &Builder) const {
   Builder.defineMacro("__sim__");
 }
+} // namespace targets
+} // namespace clang
