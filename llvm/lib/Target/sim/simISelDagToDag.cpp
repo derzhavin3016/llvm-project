@@ -55,7 +55,7 @@ public:
 /// This pass converts a legalized DAG into a sim-specific DAG, ready for
 /// instruction scheduling.
 FunctionPass *llvm::createsimISelDag(simTargetMachine &TM,
-                                      CodeGenOpt::Level OptLevel) {
+                                     CodeGenOpt::Level OptLevel) {
   return new simDAGToDAGISel(TM, OptLevel);
 }
 
@@ -75,6 +75,35 @@ bool simDAGToDAGISel::SelectBaseAddr(SDValue Addr, SDValue &Base) {
   return true;
 }
 
+
+// static SDNode *selectImm(SelectionDAG *CurDAG, const SDLoc &DL, const MVT VT,
+//                          int64_t Imm, const simSubtarget &Subtarget) {
+//   MVT XLenVT = Subtarget.getXLenVT();
+//   simMatInt::InstSeq Seq =
+//       simMatInt::generateInstSeq(Imm, Subtarget.getFeatureBits());
+
+//   SDNode *Result = nullptr;
+//   SDValue SrcReg = CurDAG->getRegister(RISCV::X0, XLenVT);
+//   for (RISCVMatInt::Inst &Inst : Seq) {
+//     SDValue SDImm = CurDAG->getTargetConstant(Inst.Imm, DL, XLenVT);
+//     if (Inst.Opc == RISCV::LUI)
+//       Result = CurDAG->getMachineNode(RISCV::LUI, DL, XLenVT, SDImm);
+//     else if (Inst.Opc == RISCV::ADD_UW)
+//       Result = CurDAG->getMachineNode(RISCV::ADD_UW, DL, XLenVT, SrcReg,
+//                                       CurDAG->getRegister(RISCV::X0, XLenVT));
+//     else if (Inst.Opc == RISCV::SH1ADD || Inst.Opc == RISCV::SH2ADD ||
+//              Inst.Opc == RISCV::SH3ADD)
+//       Result = CurDAG->getMachineNode(Inst.Opc, DL, XLenVT, SrcReg, SrcReg);
+//     else
+//       Result = CurDAG->getMachineNode(Inst.Opc, DL, XLenVT, SrcReg, SDImm);
+
+//     // Only the first instruction has X0 as its source.
+//     SrcReg = SDValue(Result, 0);
+//   }
+
+//   return Result;
+// }
+
 void simDAGToDAGISel::Select(SDNode *Node) {
   if (Node->isMachineOpcode()) {
     LLVM_DEBUG(dbgs() << "== "; Node->dump(CurDAG); dbgs() << "\n");
@@ -83,9 +112,17 @@ void simDAGToDAGISel::Select(SDNode *Node) {
   }
   unsigned Opcode = Node->getOpcode();
   SDLoc DL(Node);
+  MVT XLenVT = Subtarget->getXLenVT();
   MVT VT = Node->getSimpleValueType(0);
 
   switch (Opcode) {
+  case ISD::Constant: {
+    // auto *ConstNode = cast<ConstantSDNode>(Node);
+    SDValue New =
+        CurDAG->getCopyFromReg(CurDAG->getEntryNode(), DL, sim::X0, XLenVT);
+    ReplaceNode(Node, New.getNode());
+    return;
+  }
   case ISD::FrameIndex: {
     SDValue Imm = CurDAG->getTargetConstant(0, DL, MVT::i32);
     int FI = cast<FrameIndexSDNode>(Node)->getIndex();

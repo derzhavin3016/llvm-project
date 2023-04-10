@@ -5,12 +5,6 @@
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
-// Inst formats
-//===----------------------------------------------------------------------===//
-
-include "simInstrFormats.td"
-
-//===----------------------------------------------------------------------===//
 // RISC-V specific DAG Nodes.
 //===----------------------------------------------------------------------===//
 
@@ -102,6 +96,12 @@ def sim_la_tls_gd : SDNode<"simISD::LA_TLS_GD", SDTIntUnaryOp>;
 // sim Operand, Complex Patterns and Transformations Definitions.
 //===----------------------------------------------------------------------===//
 
+class ImmXLenAsmOperand<string prefix, string suffix = ""> : AsmOperandClass {
+  let Name = prefix # "ImmXLen" # suffix;
+  let RenderMethod = "addImmOperands";
+  let DiagnosticType = !strconcat("Invalid", Name);
+}
+
 class ImmAsmOperand<string prefix, int width, string suffix> : AsmOperandClass {
   let Name = prefix # "Imm" # width # suffix;
   let RenderMethod = "addImmOperands";
@@ -177,6 +177,10 @@ def Simm21Lsb0JALAsmOperand : SImmAsmOperand<21, "Lsb0JAL"> {
   let ParserMethod = "parseJALOffset";
 }
 
+def ixlenimm_li : Operand<XLenVT> {
+  let ParserMatchClass = ImmXLenAsmOperand<"", "LI">;
+}
+
 // A 21-bit signed immediate where the least significant bit is zero.
 def simm21_lsb0_jal : Operand<OtherVT> {
   let ParserMatchClass = Simm21Lsb0JALAsmOperand;
@@ -192,11 +196,27 @@ def simm21_lsb0_jal : Operand<OtherVT> {
   let OperandType = "OPERAND_PCREL";
 }
 
+def BareSymbol : AsmOperandClass {
+  let Name = "BareSymbol";
+  let RenderMethod = "addImmOperands";
+  let DiagnosticType = "InvalidBareSymbol";
+  let ParserMethod = "parseBareSymbol";
+}
+
+// A bare symbol.
+def bare_symbol : Operand<XLenVT> {
+  let ParserMatchClass = BareSymbol;
+}
+
 //===----------------------------------------------------------------------===//
 // Instruction Class Templates
 //===----------------------------------------------------------------------===//
 
+//===----------------------------------------------------------------------===//
+// Inst formats
+//===----------------------------------------------------------------------===//
 
+include "simInstrFormats.td"
 
 
 let hasSideEffects = 0, mayLoad = 0, mayStore = 0 in
@@ -307,13 +327,59 @@ let isBarrier = 1, isBranch = 1, isTerminator = 1 in
 def PseudoBR : Pseudo<(outs), (ins simm21_lsb0_jal:$imm20), [(br bb:$imm20)]>,
                PseudoInstExpansion<(JAL X0, simm21_lsb0_jal:$imm20)>;
 
+let isBarrier = 1, isReturn = 1, isTerminator = 1 in
+def PseudoRET : Pseudo<(outs), (ins), [(sim_ret_flag)]>,
+                PseudoInstExpansion<(JALR X0, X1, 0)>;
+
 let isBarrier = 1, isBranch = 1, isIndirectBranch = 1, isTerminator = 1 in
 def PseudoBRIND : Pseudo<(outs), (ins GPRJALR:$rs1, simm12:$imm12), []>,
                   PseudoInstExpansion<(JALR X0, GPR:$rs1, simm12:$imm12)>;
 
+def : InstAlias<"nop",           (ADDI      X0,      X0,       0)>;
+def : InstAlias<"ret",                   (JALR      X0,      X1, 0), 4>;
+
+// Note that the size is 32 because up to 8 32-bit instructions are needed to
+// generate an arbitrary 64-bit immediate. However, the size does not really
+// matter since PseudoLI is currently only used in the AsmParser where it gets
+// expanded to real instructions immediately.
+let hasSideEffects = 0, mayLoad = 0, mayStore = 0, Size = 32,
+    isCodeGenOnly = 0, isAsmParserOnly = 1 in
+def PseudoLI : Pseudo<(outs GPR:$rd), (ins ixlenimm_li:$imm), [],
+                      "li", "$rd, $imm">;
+
+def PseudoLB  : PseudoLoad<"lb">;
+def PseudoLBU : PseudoLoad<"lbu">;
+def PseudoLH  : PseudoLoad<"lh">;
+def PseudoLHU : PseudoLoad<"lhu">;
+def PseudoLW  : PseudoLoad<"lw">;
+
+def PseudoSB  : PseudoStore<"sb">;
+def PseudoSH  : PseudoStore<"sh">;
+def PseudoSW  : PseudoStore<"sw">;
+
 def : Pat<(brind GPRJALR:$rs1), (PseudoBRIND GPRJALR:$rs1, 0)>;
 def : Pat<(brind (add GPRJALR:$rs1, simm12:$imm12)),
           (PseudoBRIND GPRJALR:$rs1, simm12:$imm12)>;
+
+let EmitPriority = 0 in {
+def : InstAlias<"lb $rd, (${rs1})",
+                (LB  GPR:$rd, GPR:$rs1, 0)>;
+def : InstAlias<"lh $rd, (${rs1})",
+                (LH  GPR:$rd, GPR:$rs1, 0)>;
+def : InstAlias<"lw $rd, (${rs1})",
+                (LW  GPR:$rd, GPR:$rs1, 0)>;
+def : InstAlias<"lbu $rd, (${rs1})",
+                (LBU  GPR:$rd, GPR:$rs1, 0)>;
+def : InstAlias<"lhu $rd, (${rs1})",
+                (LHU  GPR:$rd, GPR:$rs1, 0)>;
+
+def : InstAlias<"sb $rs2, (${rs1})",
+                (SB  GPR:$rs2, GPR:$rs1, 0)>;
+def : InstAlias<"sh $rs2, (${rs1})",
+                (SH  GPR:$rs2, GPR:$rs1, 0)>;
+def : InstAlias<"sw $rs2, (${rs1})",
+                (SW  GPR:$rs2, GPR:$rs1, 0)>;
+}
 
 // Pessimistically assume the stack pointer will be clobbered
 let Defs = [X2], Uses = [X2] in {

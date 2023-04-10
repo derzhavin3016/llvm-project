@@ -80,6 +80,26 @@ class Pseudo<dag outs, dag ins, list<dag> pattern, string opcodestr = "", string
   let isCodeGenOnly = 1;
 }
 
+// Pseudo load instructions.
+class PseudoLoad<string opcodestr, RegisterClass rdty = GPR>
+    : Pseudo<(outs rdty:$rd), (ins bare_symbol:$addr), [], opcodestr, "$rd, $addr"> {
+  let hasSideEffects = 0;
+  let mayLoad = 1;
+  let mayStore = 0;
+  let isCodeGenOnly = 0;
+  let isAsmParserOnly = 1;
+}
+
+// Pseudo store instructions.
+class PseudoStore<string opcodestr, RegisterClass rsty = GPR>
+    : Pseudo<(outs GPR:$tmp), (ins rsty:$rs, bare_symbol:$addr), [], opcodestr, "$rs, $addr, $tmp"> {
+  let hasSideEffects = 0;
+  let mayLoad = 0;
+  let mayStore = 1;
+  let isCodeGenOnly = 0;
+  let isAsmParserOnly = 1;
+}
+
 class simInstR<bits<7> funct7, bits<3> funct3, simOpcode opcode, dag outs,
               dag ins, string opcodestr, string argstr>
     : simInst<outs, ins, opcodestr, argstr, [], InstFormatR> {

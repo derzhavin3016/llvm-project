@@ -282,7 +282,7 @@ static bool CC_sim(const DataLayout &DL, simABI::ABI ABI, unsigned ValNo,
   }
 
   // Allocate to a register if possible, or else a stack slot.
-  Register Reg;
+  Register Reg = State.AllocateReg(ArgGPRs);
   unsigned StoreSizeBytes = XLen / 8;
   Align StackAlign = Align(XLen / 8);
 
