@@ -25,10 +25,10 @@ FunctionPass *createsimISelDag(simTargetMachine &TM,
                                 CodeGenOpt::Level OptLevel);
 
 
-namespace sim {
-enum {
-};
-} // namespace sim
+// namespace sim {
+// enum {
+// };
+// } // namespace sim
 
 } // namespace llvm
 

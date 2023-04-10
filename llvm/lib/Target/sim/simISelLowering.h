@@ -2,6 +2,8 @@
 #define __LLVM_LIB_TARGET_SIM_SIMISELLOWERING_H__
 
 #include "sim.h"
+#include "MCTargetDesc/simInfo.h"
+#include "llvm/CodeGen/CallingConvLower.h"
 #include "llvm/CodeGen/SelectionDAG.h"
 #include "llvm/CodeGen/TargetLowering.h"
 
@@ -15,9 +17,12 @@ namespace simISD {
 enum NodeType : unsigned {
   // Start the numbering where the builtin ops and target ops leave off.
   FIRST_NUMBER = ISD::BUILTIN_OP_END,
-  RET,
-  CALL,
+  RET_FLAG,
+  URET_FLAG,
+  SRET_FLAG,
+  MRET_FLAG,
   BR_CC,
+  CALL,
 };
 
 } // namespace simISD
@@ -39,10 +44,29 @@ public:
                              unsigned AS,
                              Instruction *I = nullptr) const override;
 
-  simSubtarget const &getSubtarget() const { return STI; }
+  simSubtarget const &getSubtarget() const { return Subtarget; }
 
 private:
-  const simSubtarget &STI;
+  const simSubtarget &Subtarget;
+
+  /// RISCVCCAssignFn - This target-specific function extends the default
+  /// CCValAssign with additional information used to lower RISC-V calling
+  /// conventions.
+  typedef bool simCCAssignFn(const DataLayout &DL, simABI::ABI,
+                               unsigned ValNo, MVT ValVT, MVT LocVT,
+                               CCValAssign::LocInfo LocInfo,
+                               ISD::ArgFlagsTy ArgFlags, CCState &State,
+                               bool IsFixed, bool IsRet, Type *OrigTy,
+                               const simTargetLowering &TLI,
+                               Optional<unsigned> FirstMaskArgument);
+
+  void analyzeInputArgs(MachineFunction &MF, CCState &CCInfo,
+                        const SmallVectorImpl<ISD::InputArg> &Ins, bool IsRet,
+                        simCCAssignFn Fn) const;
+  void analyzeOutputArgs(MachineFunction &MF, CCState &CCInfo,
+                         const SmallVectorImpl<ISD::OutputArg> &Outs,
+                         bool IsRet, CallLoweringInfo *CLI,
+                         simCCAssignFn Fn) const;
 
   void ReplaceNodeResults(SDNode *N, SmallVectorImpl<SDValue> &Results,
                           SelectionDAG &DAG) const override;
