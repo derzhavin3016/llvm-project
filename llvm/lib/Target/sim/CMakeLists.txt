@@ -31,6 +31,7 @@ add_llvm_target(simCodeGen
   simRegisterInfo.cpp
   simSubtarget.cpp
   simTargetMachine.cpp
+  simMatInt.cpp
 
   LINK_COMPONENTS
   Analysis

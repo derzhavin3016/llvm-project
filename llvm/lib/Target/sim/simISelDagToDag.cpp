@@ -1,6 +1,7 @@
 #include "MCTargetDesc/simMCTargetDesc.h"
 #include "sim.h"
 #include "simTargetMachine.h"
+#include "simMatInt.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineInstrBuilder.h"
@@ -75,34 +76,27 @@ bool simDAGToDAGISel::SelectBaseAddr(SDValue Addr, SDValue &Base) {
   return true;
 }
 
+static SDNode *selectImm(SelectionDAG *CurDAG, const SDLoc &DL, const MVT VT,
+                         int64_t Imm, const simSubtarget &Subtarget) {
+  MVT XLenVT = Subtarget.getXLenVT();
+  simMatInt::InstSeq Seq =
+      simMatInt::generateInstSeq(Imm, Subtarget.getFeatureBits());
 
-// static SDNode *selectImm(SelectionDAG *CurDAG, const SDLoc &DL, const MVT VT,
-//                          int64_t Imm, const simSubtarget &Subtarget) {
-//   MVT XLenVT = Subtarget.getXLenVT();
-//   simMatInt::InstSeq Seq =
-//       simMatInt::generateInstSeq(Imm, Subtarget.getFeatureBits());
+  SDNode *Result = nullptr;
+  SDValue SrcReg = CurDAG->getRegister(sim::X0, XLenVT);
+  for (simMatInt::Inst &Inst : Seq) {
+    SDValue SDImm = CurDAG->getTargetConstant(Inst.Imm, DL, XLenVT);
+    if (Inst.Opc == sim::LUI)
+      Result = CurDAG->getMachineNode(sim::LUI, DL, XLenVT, SDImm);
+    else
+      Result = CurDAG->getMachineNode(Inst.Opc, DL, XLenVT, SrcReg, SDImm);
 
-//   SDNode *Result = nullptr;
-//   SDValue SrcReg = CurDAG->getRegister(RISCV::X0, XLenVT);
-//   for (RISCVMatInt::Inst &Inst : Seq) {
-//     SDValue SDImm = CurDAG->getTargetConstant(Inst.Imm, DL, XLenVT);
-//     if (Inst.Opc == RISCV::LUI)
-//       Result = CurDAG->getMachineNode(RISCV::LUI, DL, XLenVT, SDImm);
-//     else if (Inst.Opc == RISCV::ADD_UW)
-//       Result = CurDAG->getMachineNode(RISCV::ADD_UW, DL, XLenVT, SrcReg,
-//                                       CurDAG->getRegister(RISCV::X0, XLenVT));
-//     else if (Inst.Opc == RISCV::SH1ADD || Inst.Opc == RISCV::SH2ADD ||
-//              Inst.Opc == RISCV::SH3ADD)
-//       Result = CurDAG->getMachineNode(Inst.Opc, DL, XLenVT, SrcReg, SrcReg);
-//     else
-//       Result = CurDAG->getMachineNode(Inst.Opc, DL, XLenVT, SrcReg, SDImm);
+    // Only the first instruction has X0 as its source.
+    SrcReg = SDValue(Result, 0);
+  }
 
-//     // Only the first instruction has X0 as its source.
-//     SrcReg = SDValue(Result, 0);
-//   }
-
-//   return Result;
-// }
+  return Result;
+}
 
 void simDAGToDAGISel::Select(SDNode *Node) {
   if (Node->isMachineOpcode()) {
@@ -114,13 +108,18 @@ void simDAGToDAGISel::Select(SDNode *Node) {
   SDLoc DL(Node);
   MVT XLenVT = Subtarget->getXLenVT();
   MVT VT = Node->getSimpleValueType(0);
-
   switch (Opcode) {
   case ISD::Constant: {
-    // auto *ConstNode = cast<ConstantSDNode>(Node);
-    SDValue New =
-        CurDAG->getCopyFromReg(CurDAG->getEntryNode(), DL, sim::X0, XLenVT);
-    ReplaceNode(Node, New.getNode());
+    auto *ConstNode = cast<ConstantSDNode>(Node);
+    if (VT == XLenVT && ConstNode->isZero()) {
+      SDValue New =
+          CurDAG->getCopyFromReg(CurDAG->getEntryNode(), DL, sim::X0, XLenVT);
+      ReplaceNode(Node, New.getNode());
+      return;
+    }
+
+    int64_t Imm = ConstNode->getSExtValue();
+    ReplaceNode(Node, selectImm(CurDAG, DL, VT, Imm, *Subtarget));
     return;
   }
   case ISD::FrameIndex: {
@@ -130,6 +129,10 @@ void simDAGToDAGISel::Select(SDNode *Node) {
     ReplaceNode(Node, CurDAG->getMachineNode(sim::ADDI, DL, VT, TFI, Imm));
     return;
   }
+
+  default: 
+    dbgs() << "OPCODE: " << Opcode << '\n';
+    Node->dump();
   }
   SelectCode(Node);
 }

@@ -185,3 +185,34 @@ class simInstJ<simOpcode opcode, dag outs, dag ins, string opcodestr,
   let Inst{11-7} = rd;
   let Opcode = opcode.Value;
 }
+
+class simInstIShift<bits<5> imm11_7, bits<3> funct3, simOpcode opcode,
+                   dag outs, dag ins, string opcodestr, string argstr>
+    : simInst<outs, ins, opcodestr, argstr, [], InstFormatI> {
+  bits<6> shamt;
+  bits<5> rs1;
+  bits<5> rd;
+
+  let Inst{31-27} = imm11_7;
+  let Inst{26} = 0;
+  let Inst{25-20} = shamt;
+  let Inst{19-15} = rs1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7} = rd;
+  let Opcode = opcode.Value;
+}
+
+class simInstIShiftW<bits<7> imm11_5, bits<3> funct3, simOpcode opcode,
+                    dag outs, dag ins, string opcodestr, string argstr>
+    : simInst<outs, ins, opcodestr, argstr, [], InstFormatI> {
+  bits<5> shamt;
+  bits<5> rs1;
+  bits<5> rd;
+
+  let Inst{31-25} = imm11_5;
+  let Inst{24-20} = shamt;
+  let Inst{19-15} = rs1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7} = rd;
+  let Opcode = opcode.Value;
+}
