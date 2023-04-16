@@ -1,8 +1,11 @@
 #ifndef __LLVM_LIB_TARGET_SIM_MCTARGETDESC_SIMINFO_H__
 #define __LLVM_LIB_TARGET_SIM_MCTARGETDESC_SIMINFO_H__
 
-#include "llvm/MC/MCInstrDesc.h"
 #include "llvm/MC/MCRegister.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/StringSwitch.h"
+#include "llvm/MC/MCInstrDesc.h"
+#include "llvm/MC/SubtargetFeature.h"
 
 namespace llvm {
 
@@ -83,6 +86,13 @@ enum OperandType : unsigned {
 namespace simABI {
 
 enum ABI { ABI_ILP32, ABI_Unknown };
+
+// Returns the target ABI, or else a StringError if the requested ABIName is
+// not supported for the given TT and FeatureBits combination.
+ABI computeTargetABI(const Triple &TT, FeatureBitset FeatureBits,
+                     StringRef ABIName);
+
+ABI getTargetABI(StringRef ABIName);
 
 // To avoid the BP value clobbered by a function call, we need to choose a
 // callee saved register to save the value. RV32E only has X8 and X9 as callee
