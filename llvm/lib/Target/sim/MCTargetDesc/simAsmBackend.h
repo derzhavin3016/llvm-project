@@ -23,9 +23,9 @@ class simAsmBackend : public MCAsmBackend {
   simABI::ABI TargetABI = simABI::ABI_ILP32;
 
 public:
-  simAsmBackend(const MCSubtargetInfo &STI, uint8_t OSABI,
-                const MCTargetOptions &Options)
-      : MCAsmBackend(support::little), STI(STI), OSABI(OSABI),
+  simAsmBackend(const MCSubtargetInfo &STI, uint8_t OSABI, bool Is64Bit,
+                  const MCTargetOptions &Options)
+      : MCAsmBackend(support::little), STI(STI), OSABI(OSABI), Is64Bit(Is64Bit),
         TargetOptions(Options) {}
   ~simAsmBackend() override {}
 

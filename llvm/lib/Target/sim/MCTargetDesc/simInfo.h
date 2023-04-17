@@ -19,6 +19,9 @@ enum {
   InstFormatB = 5,
   InstFormatU = 6,
   InstFormatJ = 7,
+
+  InstFormatMask = 31,
+  InstFormatShift = 0,
 };
 
 // RISC-V Specific Machine Operand Flags
@@ -42,7 +45,25 @@ enum {
   // multiple "bitmask" flags.
   MO_DIRECT_FLAG_MASK = 15
 };
+
+// Helper functions to read TSFlags.
+/// \returns the format of the instruction.
+static inline unsigned getFormat(uint64_t TSFlags) {
+  return (TSFlags & InstFormatMask) >> InstFormatShift;
+}
+
 } // namespace simII
+
+namespace simFeatures {
+
+inline void validate(const Triple &TT, const FeatureBitset &FeatureBits) {
+}
+
+inline void toFeatureVector(std::vector<std::string> &FeatureVector,
+                     const FeatureBitset &FeatureBits) {
+}
+
+} // namespace simFeatures
 
 namespace simCC {
 enum CondCode {
@@ -64,8 +85,8 @@ enum BRCondCode {
 
 namespace simOp {
 enum OperandType : unsigned {
-  OPERAND_FIRST_RISCV_IMM = MCOI::OPERAND_FIRST_TARGET,
-  OPERAND_UIMM2 = OPERAND_FIRST_RISCV_IMM,
+  OPERAND_FIRST_sim_IMM = MCOI::OPERAND_FIRST_TARGET,
+  OPERAND_UIMM2 = OPERAND_FIRST_sim_IMM,
   OPERAND_UIMM3,
   OPERAND_UIMM4,
   OPERAND_UIMM5,
@@ -75,7 +96,7 @@ enum OperandType : unsigned {
   OPERAND_UIMM20,
   OPERAND_UIMMLOG2XLEN,
   OPERAND_RVKRNUM,
-  OPERAND_LAST_RISCV_IMM = OPERAND_RVKRNUM,
+  OPERAND_LAST_sim_IMM = OPERAND_RVKRNUM,
   // Operand is either a register or uimm5, this is used by V extension pseudo
   // instructions to represent a value that be passed as AVL to either vsetvli
   // or vsetivli.

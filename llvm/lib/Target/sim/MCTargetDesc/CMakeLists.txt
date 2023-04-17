@@ -4,10 +4,12 @@ add_llvm_component_library(LLVMsimDesc
   simMCTargetDesc.cpp
   simInfo.cpp
   simAsmBackend.cpp
-  # simMCCodeEmitter.cpp
+  simMCCodeEmitter.cpp
   simMCExpr.cpp
-  # simELFObjectWriter.cpp
-  # simTargetStreamer.cpp
+  simELFObjectWriter.cpp
+  simTargetStreamer.cpp
+  simELFStreamer.cpp
+  simMCObjectFIleInfo.cpp
 
   LINK_COMPONENTS
   MC
