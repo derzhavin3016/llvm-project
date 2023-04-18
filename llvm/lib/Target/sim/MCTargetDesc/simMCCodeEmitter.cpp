@@ -118,7 +118,7 @@ void simMCCodeEmitter::expandFunctionCall(const MCInst &MI, raw_ostream &OS,
 //   } else if (MI.getOpcode() == sim::PseudoCALLReg) {
 //     Func = MI.getOperand(1);
 //     Ra = MI.getOperand(0).getReg();
-//   } else 
+//   } else
   if (MI.getOpcode() == sim::PseudoCALL) {
     Func = MI.getOperand(0);
     Ra = sim::X1;
@@ -362,6 +362,7 @@ unsigned simMCCodeEmitter::getImmOpValue(const MCInst &MI, unsigned OpNo,
     } else if (MIFrm == simII::InstFormatB) {
       FixupKind = sim::fixup_sim_branch;
     }
+    llvm_unreachable("Unhandled fixup");
     // } else if (MIFrm == simII::InstFormatCJ) {
     //   FixupKind = sim::fixup_sim_rvc_jump;
     // } else if (MIFrm == simII::InstFormatCB) {
