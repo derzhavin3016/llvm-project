@@ -1,0 +1,46 @@
+#ifndef __LLVM_LIB_TARGET_SIM_SIMTARGETMACHINE_H__
+#define __LLVM_LIB_TARGET_SIM_SIMTARGETMACHINE_H__
+
+#include "SimInstrInfo.h"
+#include "SimSubtarget.h"
+#include "llvm/Target/TargetMachine.h"
+
+namespace llvm {
+
+class SimTargetMachine : public LLVMTargetMachine {
+  std::unique_ptr<TargetLoweringObjectFile> TLOF;
+  SimSubtarget Subtarget;
+  // mutable StringMap<std::unique_ptr<SimSubtarget>> SubtargetMap;
+
+public:
+  SimTargetMachine(const Target &T, const Triple &TT, StringRef CPU,
+                    StringRef FS, const TargetOptions &Options,
+                    std::optional<Reloc::Model> RM, std::optional<CodeModel::Model> CM,
+                    CodeGenOpt::Level OL, bool JIT);
+  ~SimTargetMachine() override;
+
+  const SimSubtarget *getSubtargetImpl() const { return &Subtarget; }
+  const SimSubtarget *getSubtargetImpl(const Function &) const override {
+    return &Subtarget;
+  }
+
+  // Pass Pipeline Configuration
+  TargetPassConfig *createPassConfig(PassManagerBase &PM) override;
+  TargetLoweringObjectFile *getObjFileLowering() const override {
+    return TLOF.get();
+  }
+
+#if 0
+  bool
+  addPassesToEmitFile(PassManagerBase &, raw_pwrite_stream &,
+                      raw_pwrite_stream *, CodeGenFileType,
+                      bool /*DisableVerify*/ = true,
+                      MachineModuleInfoWrapperPass *MMIWP = nullptr) override {
+    return false;
+  }
+#endif
+  // TargetTransformInfo getTargetTransformInfo(const Function &F) override;
+};
+} // end namespace llvm
+
+#endif // __LLVM_LIB_TARGET_SIM_SIMTARGETMACHINE_H__
